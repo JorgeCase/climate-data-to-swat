@@ -1,3 +1,4 @@
+
 # Importação de bibliotecas
 import os
 import pandas as pd
@@ -5,6 +6,10 @@ import tkinter as tk
 from messages import Messages
 from tkinter import filedialog, messagebox
 from tkinter.ttk import Progressbar, Style
+
+# Constantes
+HEADER_LINES_TO_READ = 10
+MISSING_DATE_FILL_VALUE = -99
 
 
 # Função para obter o caminho da pasta selecionada pelo usuário
@@ -31,7 +36,7 @@ def extract_info_from_header(file_path):
 
 # Função para remover cabeçalho do arquivo
 def remove_header_info(file_path):
-    df = pd.read_csv(file_path, sep=';', skiprows=10)
+    df = pd.read_csv(file_path, sep=';', skiprows=HEADER_LINES_TO_READ)
     return df
 
 
@@ -59,7 +64,7 @@ def fill_missing_dates(df, date_col):
     date_range = pd.date_range(
         start=df[date_col].min(), end=df[date_col].max(), freq='D')
     df_filled = df.set_index(date_col).reindex(date_range).reset_index()
-    df_filled.fillna(-99, inplace=True)
+    df_filled.fillna(MISSING_DATE_FILL_VALUE, inplace=True)
     df_filled = df_filled.rename(columns={'index': 'Data Medicao'})
     return df_filled
 
