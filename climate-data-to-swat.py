@@ -1,4 +1,3 @@
-
 # Importação de bibliotecas
 import os
 import pandas as pd
@@ -71,16 +70,81 @@ def fill_missing_dates(df, date_col):
 
 # Função para salvar os dados processados em arquivos .txt
 def save_to_txt(df_filled, name, code, swat_data_folder):
+    daily_folder = os.path.join(swat_data_folder, 'daily')
+    monthly_folder = os.path.join(swat_data_folder, 'monthly')
+    yearly_folder = os.path.join(swat_data_folder, 'yearly')
+    os.makedirs(daily_folder, exist_ok=True)
+    os.makedirs(monthly_folder, exist_ok=True)
+    os.makedirs(yearly_folder, exist_ok=True)
+
     for column in df_filled.columns:
         if column != 'Data Medicao' and column != 'Unnamed: 10':
-            data_file_name = f"{name}_{code}_{column.replace('/', '_')}.txt"
-            data_file_path = os.path.join(swat_data_folder, data_file_name)
-            with open(data_file_path, 'w') as data_file:
-                data_file.write(
+            # Salvando dados diários
+            data_file_name_daily = (
+                f"{name}_{code}_{column.replace('/', '_')}.txt"
+            )
+            data_file_path_daily = os.path.join(
+                daily_folder, data_file_name_daily
+                )
+
+            with open(data_file_path_daily, 'w') as data_file_daily:
+                data_file_daily.write(
                     df_filled['Data Medicao'].iloc[0].strftime(
                         '%Y%m%d') + "\n")
                 df_filled[column].to_csv(
-                    data_file, index=False, header=False, sep=' ')
+                    data_file_daily, index=False, header=False, sep=' ')
+
+                data_file_daily.close()
+
+            # Salvando dados mensais (total)
+            data_file_name_monthly = (
+                f"Total_Monthly_{name}_{code}_{column.replace('/', '_')}.txt"
+            )
+            data_file_path_monthly = os.path.join(
+                monthly_folder, data_file_name_monthly
+                )
+
+            with open(data_file_path_monthly, 'w') as data_file_monthly:
+                data_file_monthly.write("Year-Month Total\n")
+                monthly_sum = (
+                    df_filled[df_filled[column] != MISSING_DATE_FILL_VALUE]
+                    .set_index('Data Medicao')
+                    .resample('M')
+                    .sum(numeric_only=True)
+                )
+                monthly_sum.index = monthly_sum.index.strftime('%Y-%m')
+                monthly_sum[column].to_csv(
+                    data_file_monthly,
+                    header=False,
+                    sep=' '
+                )
+
+                data_file_monthly.close()
+
+            # Salvando dados anuais (total)
+            data_file_name_yearly = (
+                f"Total_Yearly_{name}_{code}_{column.replace('/', '_')}.txt"
+            )
+            data_file_path_yearly = os.path.join(
+                yearly_folder, data_file_name_yearly
+                )
+
+            with open(data_file_path_yearly, 'w') as data_file_yearly:
+                data_file_yearly.write("Year Total\n")
+                yearly_sum = (
+                    df_filled[df_filled[column] != MISSING_DATE_FILL_VALUE]
+                    .set_index('Data Medicao')
+                    .resample('Y')
+                    .sum(numeric_only=True)
+                )
+                yearly_sum.index = yearly_sum.index.strftime('%Y')
+                yearly_sum[column].to_csv(
+                    data_file_yearly,
+                    header=False,
+                    sep=' '
+                )
+
+                data_file_yearly.close()
 
 
 # Classe da aplicação de processamento
