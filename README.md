@@ -27,7 +27,7 @@
   <h2 align="center">Observações</h2>
   <ul>
     <li> O aplicativo é desenvolvido usando o Python 3.</li>
-    <li>Se encontrar algum problmea ou tiver dúvidas e sugestões, sinta-se à para entrar em contato pelo e-mail:<br><code>jorgekzbra@gmail.com</code></li>
+    <li>Se encontrar algum problema ou tiver dúvidas e sugestões, entre em contato pelo e-mail:<br><code>jorgekzbra@gmail.com</code></li>
   </ul>
   <p>Aproveite o Climate-data-to-swat para simplificar a preparação de dados para suas simulações no SWAT!</p>
 </body>
