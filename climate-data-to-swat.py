@@ -22,7 +22,7 @@ def get_folder_path():
 # Função para extrair as informações do cabeçalho do arquivo
 def extract_info_from_header(file_path):
     with open(file_path, 'r') as file:
-        header_lines = [next(file) for _ in range(10)]
+        header_lines = [next(file) for _ in range(HEADER_LINES_TO_READ)]
 
     name_line = header_lines[0]
     code_line = header_lines[1]
@@ -51,8 +51,11 @@ def read_csv_files_in_folder(folder_path):
             name, code = extract_info_from_header(file_path)
             df = remove_header_info(file_path)
             dataframes[csv_file] = (df, name, code)
-        except pd.errors.ParserError:
-            print(f"Erro ao ler arquivo '{csv_file}'. Pulando para o próximo.")
+        except pd.errors.ParserError as e:
+            print(
+                f"Erro ao ler arquivo '{csv_file}: {e}'. "
+                "Pulando para o próximo."
+            )
 
     return dataframes
 
@@ -66,6 +69,13 @@ def fill_missing_dates(df, date_col):
     df_filled.fillna(MISSING_DATE_FILL_VALUE, inplace=True)
     df_filled = df_filled.rename(columns={'index': 'Data Medicao'})
     return df_filled
+
+
+def sum_if_no_missing_date_fill_value(group):
+    if not (group == MISSING_DATE_FILL_VALUE).any():
+        return group.sum(numeric_only=True)
+    else:
+        return MISSING_DATE_FILL_VALUE
 
 
 # Função para salvar os dados processados em arquivos .txt
@@ -94,7 +104,7 @@ def save_to_txt(df_filled, name, code, swat_data_folder):
                 df_filled[column].to_csv(
                     data_file_daily, index=False, header=False, sep=' ')
 
-                data_file_daily.close()
+                # data_file_daily.close()
 
             # Salvando dados mensais (total)
             data_file_name_monthly = (
@@ -107,10 +117,10 @@ def save_to_txt(df_filled, name, code, swat_data_folder):
             with open(data_file_path_monthly, 'w') as data_file_monthly:
                 data_file_monthly.write("Year-Month Total\n")
                 monthly_sum = (
-                    df_filled[df_filled[column] != MISSING_DATE_FILL_VALUE]
+                    df_filled
                     .set_index('Data Medicao')
                     .resample('M')
-                    .sum(numeric_only=True)
+                    .apply(sum_if_no_missing_date_fill_value)
                 )
                 monthly_sum.index = monthly_sum.index.strftime('%Y-%m')
                 monthly_sum[column].to_csv(
@@ -118,8 +128,6 @@ def save_to_txt(df_filled, name, code, swat_data_folder):
                     header=False,
                     sep=' '
                 )
-
-                data_file_monthly.close()
 
             # Salvando dados anuais (total)
             data_file_name_yearly = (
@@ -132,10 +140,10 @@ def save_to_txt(df_filled, name, code, swat_data_folder):
             with open(data_file_path_yearly, 'w') as data_file_yearly:
                 data_file_yearly.write("Year Total\n")
                 yearly_sum = (
-                    df_filled[df_filled[column] != MISSING_DATE_FILL_VALUE]
+                    df_filled
                     .set_index('Data Medicao')
                     .resample('Y')
-                    .sum(numeric_only=True)
+                    .apply(sum_if_no_missing_date_fill_value)
                 )
                 yearly_sum.index = yearly_sum.index.strftime('%Y')
                 yearly_sum[column].to_csv(
@@ -143,8 +151,6 @@ def save_to_txt(df_filled, name, code, swat_data_folder):
                     header=False,
                     sep=' '
                 )
-
-                data_file_yearly.close()
 
 
 # Classe da aplicação de processamento
